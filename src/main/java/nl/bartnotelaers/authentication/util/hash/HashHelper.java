@@ -5,7 +5,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class HashHelper {
-    // TODO
     //  SHA-256 is not safe to use in production!
     //  this is just for study and practice purposes
     private static final String HASHING_ALGORITHM = "SHA-256";
