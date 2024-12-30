@@ -31,4 +31,9 @@ public class UsernameTokenMap implements UsernameTokenDatabase {
     public boolean hasToken(String token) {
         return databaseMap.containsValue(token);
     }
+
+    public boolean check(String username, String token) {
+        String retrievedValue = databaseMap.get(username);
+        return retrievedValue.equals(token);
+    }
 }
