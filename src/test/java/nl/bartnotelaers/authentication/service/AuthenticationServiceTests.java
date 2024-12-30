@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.UUID;
-
 @SpringBootTest
 public class AuthenticationServiceTests {
     private AuthenticationService authenticationService;
@@ -55,18 +53,42 @@ public class AuthenticationServiceTests {
     }
 
     @Test
-    @DisplayName("Valid UUID token results in successful authentication")
-    public void authenticateTokenTestValidUuidToken() {
-        String validUuid = UUID.randomUUID().toString();
-        usernameTokenMap.insertToken("username", validUuid);
-        boolean success = authenticationService.authenticate(validUuid);
+    @DisplayName("Validate simple JWT token")
+    public void validateJwtToken() {
+        // arrange
+        String validJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKb2huIERvZSIsInRva2VuIjoic29tZVRva2VuVG9TdG9yZSIsImlhdCI6MTUxNjIzOTAyMn0.whJVj1qjPyUxPc4QzlYk5eeQ2vP_A0Qw6khx5p7Dy2I";
+        usernameTokenMap.insertToken("John Doe", "someTokenToStore");
+        // act
+        boolean success = authenticationService.validateJwt(validJwt);
+        // assert
         assert (success);
     }
 
     @Test
-    @DisplayName("Invalid UUID token results in failed authentication")
-    public void authenticateTokenTestInvalidUuid() {
-        boolean success = authenticationService.authenticate("incorrectToken");
+    @DisplayName("Reject expired AccessToken")
+    public void validateAccessTokenRejectExpired() {
+        // arrange
+        // JWT contains expiration date somewhere in 2018
+        String expiredJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKaW1teSBKb2huc29uIiwidG9rZW4iOiJzb21lVG9rZW5Ub1N0b3JlIiwiZXhwIjoxNTE2MjM5MDIyfQ.ozIEjP0XK2C5SsCaDNZ8WNDhdwXbl0QQL_dxXAjTXwQ";
+        usernameTokenMap.insertToken("Jimmy Johnson", "someTokenToStore");
+        assert (usernameTokenMap.hasToken("someTokenToStore"));
+        // act
+        boolean success = authenticationService.validateAccessToken(expiredJwt);
+        // assert
         assert (!success);
     }
+
+    @Test
+    @DisplayName("Create token and validate immediately (requires working validateAccessToken)")
+    public void createAccessTokenAndValidate() {
+        // arrange
+        String newToken = authenticationService.createAccessToken("Joanna Doe");
+        // act
+        boolean success = authenticationService.validateAccessToken(newToken);
+        // assert
+        assert (success);
+    }
+
+
+
 }

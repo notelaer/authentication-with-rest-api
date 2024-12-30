@@ -34,6 +34,11 @@ public class UsernameTokenMap implements UsernameTokenDatabase {
 
     public boolean check(String username, String token) {
         String retrievedValue = databaseMap.get(username);
-        return retrievedValue.equals(token);
+        if (retrievedValue != null) {
+            return retrievedValue.equals(token);
+        } else {
+            // instead of proper exception handling ( not the focus of this project)
+            return false;
+        }
     }
 }

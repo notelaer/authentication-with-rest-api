@@ -18,12 +18,8 @@ public class LoginService {
 
     public String login(String username, String password) {
         if (authenticationService.authenticate(username, password)) {
-            // TODO replace opaque token with JWT
-            // generate opaque token
-            String newToken = UUID.randomUUID().toString();
-            // store token in database
-            usernameTokenDatabase.insertToken(username, newToken);
-            return newToken;
+            // generate and return refresh token
+            return authenticationService.createRefreshToken(username);
         } else {
             return null;
         }
