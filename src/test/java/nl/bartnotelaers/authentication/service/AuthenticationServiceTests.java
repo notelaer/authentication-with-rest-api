@@ -79,7 +79,19 @@ public class AuthenticationServiceTests {
     }
 
     @Test
-    @DisplayName("Create token and validate immediately (requires working validateAccessToken)")
+    @DisplayName("Reject expired RefreshToken")
+    public void validateRefreshTokenRejectExpired() {
+        // arrange
+        usernameTokenMap.insertToken("Bubbles Platinum", "8sdha8dh883hdcc");
+        String expiredRefreshToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJCdWJibGVzIFBsYXRpbnVtIiwidG9rZW4iOiI4c2RoYThkaDg4M2hkY2MiLCJleHAiOjE1MTYyMzkwMjJ9.avzy-BrrcltnZq4zbCmwSIOO6GGGo1mGUVtoUn-TDkw";
+        // act
+        boolean success = authenticationService.validateAccessToken(expiredRefreshToken);
+        // assert
+        assert (!success);
+    }
+
+    @Test
+    @DisplayName("Create access token and validate immediately (requires working validateAccessToken)")
     public void createAccessTokenAndValidate() {
         // arrange
         String newToken = authenticationService.createAccessToken("Joanna Doe");
@@ -89,6 +101,13 @@ public class AuthenticationServiceTests {
         assert (success);
     }
 
+    @Test
+    @DisplayName("Create refresh token and validate immediately (requires working validateRefreshToken")
+    public void createRefreshTokenAndValidate() {
+        String refreshToken = authenticationService.createRefreshToken("Richard Thompson");
+        boolean success = authenticationService.validateRefreshToken(refreshToken);
+        assert (success);
+    }
 
 
 }

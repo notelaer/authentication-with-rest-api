@@ -8,14 +8,11 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import nl.bartnotelaers.authentication.repository.UsernameSaltAndHashDatabase;
 import nl.bartnotelaers.authentication.repository.UsernameTokenDatabase;
 import nl.bartnotelaers.authentication.util.hash.SaltAndHash;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -25,10 +22,10 @@ public class AuthenticationService {
     private UsernameTokenDatabase usernameTokenDatabase;
 
     // secret for encoding and decoding jwt
-    // String secret = System.getenv("JWT_SECRET");
-    private final String secret = "8osf8jhf4jhfjs99s9dkvv";
-    // algorithm to use with encoding and decoding JWT
-    private final Algorithm algorithm = Algorithm.HMAC256(secret);
+    private final String SECRET = "8osf8jhf4jhfjs99s9dkvv";
+    // private final String SECRET = System.getenv("JWT_SECRET");
+    // algorithm to use with encoding and decoding JWT, secret in environment variables
+    private final Algorithm algorithm = Algorithm.HMAC256(SECRET);
 
     @Value("${authentication.accessTokenExpiration}")
     private int ACCESS_TOKEN_EXPIRATION;
@@ -79,6 +76,14 @@ public class AuthenticationService {
         }
     }
 
+    public String createAccessToken(String username) {
+        Instant expiration = Instant.now().plusSeconds(ACCESS_TOKEN_EXPIRATION);
+        return JWT.create()
+                .withSubject(username)
+                .withExpiresAt(expiration)
+                .sign(algorithm);
+    }
+
     // validate a JWT access token with DateTime claim check and signature check
     public boolean validateAccessToken(String token) {
         JWTVerifier verifier = JWT.require(algorithm).build();
@@ -86,21 +91,6 @@ public class AuthenticationService {
         try {
             verifier.verify(token);
             return true;
-        } catch (JWTVerificationException e) {
-            return false;
-        }
-    }
-
-    // validate a refresh token with database check
-    public boolean validateRefreshToken(String token) {
-        try {
-            // verify includes DateTime claim validation
-            DecodedJWT decodedJwt = JWT.require(algorithm)
-                    .build()
-                    .verify(token);
-            String username = decodedJwt.getSubject();
-            String uuid = decodedJwt.getClaim("refreshToken").toString();
-            return usernameTokenDatabase.check(username, uuid);
         } catch (JWTVerificationException e) {
             return false;
         }
@@ -120,11 +110,20 @@ public class AuthenticationService {
                 .sign(algorithm);
     }
 
-    public String createAccessToken(String username) {
-        Instant expiration = Instant.now().plusSeconds(ACCESS_TOKEN_EXPIRATION);
-        return JWT.create()
-                .withSubject(username)
-                .withExpiresAt(expiration)
-                    .sign(algorithm);
+    // validate a refresh token with database check
+    public boolean validateRefreshToken(String token) {
+        try {
+            // verify includes DateTime claim validation
+            DecodedJWT decodedJwt = JWT.require(algorithm)
+                    .build()
+                    .verify(token);
+            String username = decodedJwt.getSubject();
+            String uuid = decodedJwt.getClaim("refreshToken").asString();
+            return usernameTokenDatabase.check(username, uuid);
+        } catch (JWTVerificationException e) {
+            return false;
+        }
     }
+
+
 }
