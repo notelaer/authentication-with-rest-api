@@ -21,10 +21,9 @@ public class AuthenticationService {
     private UsernameSaltAndHashDatabase usernameSaltAndHashDatabase;
     private UsernameTokenDatabase usernameTokenDatabase;
 
-    // secret for encoding and decoding jwt
-    private final String SECRET = "8osf8jhf4jhfjs99s9dkvv";
-    // private final String SECRET = System.getenv("JWT_SECRET");
-    // algorithm to use with encoding and decoding JWT, secret in environment variables
+    // secret for encoding and decoding jwt is set in environment variables
+    private final String SECRET = System.getenv("JWT_SECRET");
+    // algorithm to use with encoding and decoding JWT
     private final Algorithm algorithm = Algorithm.HMAC256(SECRET);
 
     @Value("${authentication.accessTokenExpiration}")
