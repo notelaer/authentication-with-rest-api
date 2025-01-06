@@ -2,13 +2,14 @@ package nl.bartnotelaers.authentication.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import nl.bartnotelaers.authentication.model.Credential;
 import nl.bartnotelaers.authentication.repository.UsernameSaltAndHashDatabase;
 import nl.bartnotelaers.authentication.repository.UsernameTokenDatabase;
 import nl.bartnotelaers.authentication.util.hash.SaltAndHash;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -28,16 +29,12 @@ public class AuthenticationService {
     private UsernameSaltAndHashDatabase usernameSaltAndHashDatabase;
     private UsernameTokenDatabase usernameTokenDatabase;
 
-    // secret for encoding and decoding jwt is set in environment variables
-    private final String SECRET = System.getenv("JWT_SECRET");
-    // algorithm to use with encoding and decoding JWT
-    private final Algorithm algorithm = Algorithm.HMAC256(SECRET);
-
     @Value("${authentication.accessTokenExpiration}")
-    private int ACCESS_TOKEN_EXPIRATION;
+    private int ACCESS_TOKEN_EXPIRATION; // saved in application.properties
     @Value("${authentication.refreshTokenExpiration}")
-    private int REFRESH_TOKEN_EXPIRATION;
+    private int REFRESH_TOKEN_EXPIRATION; // saved in application.properties
 
+    @Autowired
     public AuthenticationService(HashService hashService,
                                  UsernameSaltAndHashDatabase usernameSaltAndHashDatabase,
                                  UsernameTokenDatabase usernameTokenDatabase) {
@@ -71,13 +68,10 @@ public class AuthenticationService {
             // decode payload
             Base64.Decoder decoder = Base64.getUrlDecoder();
             String payload = new String(decoder.decode(chunks[1]));
-            // TODO either use decoded payload or DecodedJWT, not both :-)
+            JSONObject json = new JSONObject(payload);
             // get values for keys "username" and "token"
-            DecodedJWT decodedJwt = JWT.require(algorithm)
-                    .build()
-                    .verify(jwt);
-            String username = decodedJwt.getSubject();
-            String token = decodedJwt.getClaim("token").asString();
+            String username = (String) json.get("sub");
+            String token = (String) json.get("token");
             // check username and token in database
             return usernameTokenDatabase.check(username, token);
         } catch (Exception e) {
@@ -91,12 +85,12 @@ public class AuthenticationService {
         return JWT.create()
                 .withSubject(username)
                 .withExpiresAt(expiration)
-                .sign(algorithm);
+                .sign(hashService.getAlgorithm());
     }
 
     // validate a JWT access token with DateTime claim check and signature check
     public boolean validateAccessToken(String token) {
-        JWTVerifier verifier = JWT.require(algorithm).build();
+        JWTVerifier verifier = JWT.require(hashService.getAlgorithm()).build();
         // validate jwt (includes DateTime claim validation)
         try {
             verifier.verify(token);
@@ -115,14 +109,14 @@ public class AuthenticationService {
                 .withSubject(username)
                 .withClaim("refreshToken", refreshString)
                 .withExpiresAt(expiration)
-                .sign(algorithm);
+                .sign(hashService.getAlgorithm());
     }
 
     // validate a refresh token with database check
     public boolean validateRefreshToken(String token) {
         try {
             // verify includes DateTime claim validation
-            DecodedJWT decodedJwt = JWT.require(algorithm)
+            DecodedJWT decodedJwt = JWT.require(hashService.getAlgorithm())
                     .build()
                     .verify(token);
             String username = decodedJwt.getSubject();
@@ -134,7 +128,7 @@ public class AuthenticationService {
     }
 
     public String getUsernameFromToken(String token) {
-        DecodedJWT decodedJwt = JWT.require(algorithm)
+        DecodedJWT decodedJwt = JWT.require(hashService.getAlgorithm())
                 .build()
                 .verify(token);
         return decodedJwt.getSubject();

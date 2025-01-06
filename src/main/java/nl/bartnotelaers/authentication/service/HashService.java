@@ -1,18 +1,25 @@
 package nl.bartnotelaers.authentication.service;
 
 
+import com.auth0.jwt.algorithms.Algorithm;
 import nl.bartnotelaers.authentication.util.hash.HashHelper;
 import nl.bartnotelaers.authentication.util.hash.SaltMaker;
 import org.springframework.stereotype.Service;
 
 @Service
 public class HashService {
-    // TODO implement simple keystretch by adding number of rounds to hashPassword
-    // TODO implement possibility of using other hashing algorithms
-    // (use method overloading to add non-default algorithm?)
+    // TODO implement simple keystretch by adding number of rounds to hash method
     private PepperService pepperService;
     private SaltMaker saltMaker;
 
+    // secret used by algorithm for singing and verifying jwt (see environment variables)
+    // not secure for production though :-)
+    private final String SECRET = System.getenv("JWT_SECRET");
+
+    // algorithm to use with singing and verifying JWT
+    // TODO implement possibility of using other hashing algorithms?
+    //  and then check for algorithm in JWT header when validating
+    private final Algorithm algorithm = Algorithm.HMAC256(SECRET);
 
     public HashService(PepperService pepperService, SaltMaker saltMaker) {
         this.pepperService = pepperService;
@@ -33,4 +40,7 @@ public class HashService {
         return saltMaker.generateSalt();
     }
 
+    public Algorithm getAlgorithm() {
+        return algorithm;
+    }
 }

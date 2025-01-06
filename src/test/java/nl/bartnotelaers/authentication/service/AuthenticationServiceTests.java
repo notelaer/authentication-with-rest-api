@@ -28,10 +28,10 @@ public class AuthenticationServiceTests {
     @DisplayName("valid credentials ; authentication successful")
     public void validateCredentialTestValidCredentials() {
         // janiceDoe password is  egLi85'x,cZPg%ur
-        // hash is sha256 and includes pepper
-        usernameSaltAndHashMap.insertUsernameSaltAndHash("janiceDoe",
-                "c9a30dea", "5b5f208603f421231b163fdda56b1c337d0bfab9338c20cc9ea66c0d23e11e7e");
-        Credential validCredential = new Credential("janiceDoe",
+        // hash is sha256 and is made from salt + password + pepper
+        usernameSaltAndHashMap.insertUsernameSaltAndHash("someOne",
+                "c9a30dea", "8b800dc0e8de2ebdbc88d9dd8f7affe84773a74e665930d750ae95482a018449");
+        Credential validCredential = new Credential("someOne",
                 "egLi85'x,cZPg%ur");
         boolean success = authenticationService.validateCredential(validCredential);
         assert (success);
