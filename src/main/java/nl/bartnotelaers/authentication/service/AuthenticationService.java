@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import nl.bartnotelaers.authentication.model.Credential;
 import nl.bartnotelaers.authentication.repository.UsernameSaltAndHashDatabase;
 import nl.bartnotelaers.authentication.repository.UsernameTokenDatabase;
 import nl.bartnotelaers.authentication.util.hash.SaltAndHash;
@@ -13,8 +14,14 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Authenticate users based on username/password, access token or refresh token
+ * could be set up on a separate authentication server
+ */
 @Service
 public class AuthenticationService {
     private HashService hashService;
@@ -39,9 +46,11 @@ public class AuthenticationService {
         this.usernameTokenDatabase = usernameTokenDatabase;
     }
 
-    public boolean authenticate(String username, String password) {
+    public boolean validateCredential(Credential credential) {
+        String username = credential.getUsername();
         SaltAndHash retrievedSaltHash = usernameSaltAndHashDatabase.getSaltAndHashByUsername(username);
         if (retrievedSaltHash != null) {
+            String password = credential.getPassword();
             String givenHash = hashService.hash(retrievedSaltHash.getSalt(), password);
             String storedHash = retrievedSaltHash.getHash();
             if (givenHash.equals(storedHash)) {
@@ -54,6 +63,7 @@ public class AuthenticationService {
     }
 
     // simple and insecure validation of a JWT's payload (without checking signature)
+    // written as a stepping stone for learning about JWTs
     public boolean validateJwt(String jwt) {
         try {
             // split jwt into header, payload and signature
@@ -61,6 +71,7 @@ public class AuthenticationService {
             // decode payload
             Base64.Decoder decoder = Base64.getUrlDecoder();
             String payload = new String(decoder.decode(chunks[1]));
+            // TODO either use decoded payload or DecodedJWT, not both :-)
             // get values for keys "username" and "token"
             DecodedJWT decodedJwt = JWT.require(algorithm)
                     .build()
@@ -99,12 +110,10 @@ public class AuthenticationService {
     public String createRefreshToken(String username) {
         String refreshString = UUID.randomUUID().toString();
         usernameTokenDatabase.insertToken(username, refreshString);
-        String accessToken = createAccessToken(username);
         Instant expiration = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION);
         return JWT.create()
                 .withSubject(username)
                 .withClaim("refreshToken", refreshString)
-                .withClaim("accessToken", accessToken)
                 .withExpiresAt(expiration)
                 .sign(algorithm);
     }
@@ -124,5 +133,17 @@ public class AuthenticationService {
         }
     }
 
+    public String getUsernameFromToken(String token) {
+        DecodedJWT decodedJwt = JWT.require(algorithm)
+                .build()
+                .verify(token);
+        return decodedJwt.getSubject();
+    }
 
+    public String mapTokensToString(String accessToken, String refreshToken) {
+        Map<String, String> tokenMap = new HashMap<>();
+        tokenMap.put("accessToken", accessToken);
+        tokenMap.put("refreshToken", refreshToken);
+        return tokenMap.toString();
+    }
 }

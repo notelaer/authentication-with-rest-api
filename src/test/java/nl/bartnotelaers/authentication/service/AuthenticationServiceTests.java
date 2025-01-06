@@ -1,8 +1,8 @@
 package nl.bartnotelaers.authentication.service;
 
 
+import nl.bartnotelaers.authentication.model.Credential;
 import nl.bartnotelaers.authentication.repository.UsernameSaltAndHashMap;
-import nl.bartnotelaers.authentication.repository.UsernameTokenDatabase;
 import nl.bartnotelaers.authentication.repository.UsernameTokenMap;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class AuthenticationServiceTests {
     private AuthenticationService authenticationService;
     private UsernameSaltAndHashMap usernameSaltAndHashMap;
-    private UsernameTokenDatabase usernameTokenDatabase;
     private UsernameTokenMap usernameTokenMap;
 
     @Autowired
@@ -22,32 +21,32 @@ public class AuthenticationServiceTests {
                                       UsernameTokenMap usernameTokenMap) {
         this.authenticationService = authenticationService;
         this.usernameSaltAndHashMap = usernameSaltAndHashMap;
-//        this.usernameTokenDatabase = usernameTokenDatabase;
         this.usernameTokenMap = usernameTokenMap;
     }
 
     @Test
     @DisplayName("valid credentials ; authentication successful")
-    public void authenticateTestValidCredentials() {
+    public void validateCredentialTestValidCredentials() {
         // janiceDoe password is  egLi85'x,cZPg%ur
         // hash is sha256 and includes pepper
         usernameSaltAndHashMap.insertUsernameSaltAndHash("janiceDoe",
                 "c9a30dea", "5b5f208603f421231b163fdda56b1c337d0bfab9338c20cc9ea66c0d23e11e7e");
-        boolean success = authenticationService.authenticate("janiceDoe",
+        Credential validCredential = new Credential("janiceDoe",
                 "egLi85'x,cZPg%ur");
+        boolean success = authenticationService.validateCredential(validCredential);
         assert (success);
     }
 
     @Test
     @DisplayName("invalid credentials ; authentication fails")
-    public void authenticateTestInvalidCredentials() {
+    public void validateCredentialTestInvalidCredentials() {
         // arrange
-        // janiceDoe password is  egLi85'x,cZPg%ur
-        // hash is sha256 and includes pepper
         usernameSaltAndHashMap.insertUsernameSaltAndHash("janiceDoe",
                 "c9a30dea", "5b5f208603f421231b163fdda56b1c337d0bfab9338c20cc9ea66c0d23e11e7e");
+        Credential invalidCredential = new Credential("janiceDoe",
+                "wrongPassword");
         // act
-        boolean success = authenticationService.authenticate("janiceDoe", "wrongPassword");
+        boolean success = authenticationService.validateCredential(invalidCredential);
         // assert
         assert (!success);
     }
