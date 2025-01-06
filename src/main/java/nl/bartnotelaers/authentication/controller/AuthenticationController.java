@@ -31,16 +31,6 @@ public class AuthenticationController {
         }
     }
 
-    // access a secured resource by sending an access token in the header
-    @GetMapping("/secured-resource")
-    public ResponseEntity<?> getSecuredEndpointWithToken(@RequestHeader("Authorization") String accessToken) {
-        if (authenticationService.validateAccessToken(accessToken)) {
-            return new ResponseEntity<>("You have successfully accessed the secured resource!", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-    }
-
     // get a new access token by sending the refresh token in the header
     @PostMapping("/token")
     public ResponseEntity<?> getNewAccessToken(@RequestHeader("Authorization") String refreshToken) {
