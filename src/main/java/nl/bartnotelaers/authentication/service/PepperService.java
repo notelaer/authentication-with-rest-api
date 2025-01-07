@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PepperService {
-    private final String PEPPER = "ThisIsJustAPlaceHolderAsPepperShouldBeSavedElsewhereLikeInAHardwareSecurityModule";
+    private final String PEPPER = "APepperShouldBeSavedElsewhereLikeInAHardwareSecurityModule";
     public String getPepper() {
         return PEPPER;
     }
