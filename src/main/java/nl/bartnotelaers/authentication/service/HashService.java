@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class HashService {
     // TODO implement simple keystretch by adding number of rounds to hash method
+    // or play with bcrypt
     private PepperService pepperService;
-    private SaltMaker saltMaker;
 
     // secret used by algorithm for singing and verifying jwt (see environment variables)
     // not secure for production though :-)
@@ -21,9 +21,8 @@ public class HashService {
     //  and then check for algorithm in JWT header when validating
     private final Algorithm algorithm = Algorithm.HMAC256(SECRET);
 
-    public HashService(PepperService pepperService, SaltMaker saltMaker) {
+    public HashService(PepperService pepperService) {
         this.pepperService = pepperService;
-        this.saltMaker = saltMaker;
     }
 
     public String hash(String salt, String password) {
@@ -31,13 +30,13 @@ public class HashService {
     }
 
     public String hash(String password) {
-        String salt = saltMaker.generateSalt();
+        String salt = SaltMaker.generateSalt();
         String pepper = pepperService.getPepper();
         return HashHelper.hash(salt, password, pepper);
     }
 
     public String generateSalt() {
-        return saltMaker.generateSalt();
+        return SaltMaker.generateSalt();
     }
 
     public Algorithm getAlgorithm() {
